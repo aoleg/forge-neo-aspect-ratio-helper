@@ -1,80 +1,67 @@
 # Aspect Ratio Helper – Forge Neo Edition (Gradio 4 Ready)
 
 A maintained fork of Aspect Ratio Helper adapted for Forge Neo and Gradio 4.x.
-This version resolves compatibility issues caused by deprecated Gradio APIs and differences in Neo’s frontend initialization. The JavaScript controller has been redesigned to function independently of window.opts and to initialize reliably within Neo’s UI environment.
+This version resolves compatibility issues caused by deprecated Gradio APIs and differences in Neo's frontend initialization. The JavaScript controller has been redesigned to function independently of `window.opts` and to initialize reliably within Neo's UI environment.
 This fork will continue to be maintained for Forge Neo compatibility.
-
 
 ---
 
-# Aspect Ratio Helper  [![pytest](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper/actions/workflows/pytest.yml)
+# Aspect Ratio Helper [![pytest](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper/actions/workflows/pytest.yml)
 
 Simple extension to easily maintain aspect ratio while changing dimensions.
 
-Install via the extensions tab on the [AUTOMATIC1111 webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+Install via the extensions tab on the [AUTOMATIC1111 webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) or Forge Neo.
 
 ## Features
 
-**(note this list is a little out of date, will need to find time to update it)**
+### JavaScript aspect ratio controls
 
-- JavaScript aspect ratio controls
-  - Adds a dropdown of configurable aspect ratios, to which the dimensions will auto-scale
-  - When selected, you will only be able to modify the higher dimension
-    - The smaller or equivalent dimension will scale accordingly
-  - If "Lock/🔒" is selected, the aspect ratio of the current dimensions will be kept
-  - If "Image/🖼️" is selected, the aspect ratio of the current image will be kept (img2img only)
-  - If you click the "Swap/⇅" button, the current dimensions will swap
-    - Configurable aspect ratios will also flip, reducing the need for duplication of config
+Injected next to the native Width/Height sliders (txt2img and img2img), not inside the accordion below.
 
-https://user-images.githubusercontent.com/22506439/227396634-7a63671a-fd38-419a-b734-a3d26647cc1d.mp4
+- **Aspect ratio dropdown** — pick a ratio (e.g. `3:2`, `16:9`) and Width/Height are recalculated from the **Side** pixel budget: the resulting resolution has an area of roughly `side²`, aligned to a multiple of 64 by default. For example, `3:2` at a side of `1024` gives `1216×832` — matching the standard SDXL preset resolutions exactly for every built-in ratio (`1:1`, `5:4`, `4:3`, `3:2`, `16:9`, `21:9` and their portrait mirrors).
+- **Side** — a compact slider next to Width, default `1024`. Acts as the pixel budget described above. Setting it to `0` falls back to scaling from whatever resolution is currently set on the sliders (the old behavior), instead of a fixed budget.
+- **Align to a multiple of 64** — checkbox, enabled by default. When on, aspect ratio results (and Lock-mode recalculations) always land on a multiple of 64; when off, dimensions are rounded to the nearest pixel that hits the exact ratio.
+- **Lock 🔒** — captures whatever ratio Width/Height currently have. While locked, editing either Width or Height recalculates the other to preserve that ratio (aligned to 64 if the checkbox is on). When you leave (blur) a Width/Height input box, if the committed value is within 64px of what the locked ratio would produce at a standard resolution (512, 768, 1024, 1536, 2048, i.e. SD1.5/SD2/SDXL and their 1.5×/2× multiples), both dimensions snap to that resolution. Nothing snaps while you're still typing.
+- **Image 🖼️** (img2img only) — keeps the aspect ratio of the currently loaded image.
+- **Swap ⇅** — flips the current dimensions. The configured ratio list also flips (e.g. `3:2` becomes `2:3`), so you don't need to list both orientations separately.
+- Width/Height minimum and maximum are read from whatever your `ui-config.json` configured for those sliders (not hard-coded), so resolutions above 2048 (e.g. for 4K generation) work correctly.
 
-<br/>
+### Accordion controls (unchanged)
 
-- Scale to maximum dimension
-  - Upon clicking, the width and height will scale according to the configured maximum value
-  - Aspect ratio will be retained, the smaller or equivalent dimension will be scaled to match
-- Scale to aspect ratio
-  - Upon clicking, the current dimensions will be scaled to the given aspect ratio, using the highest width or height
-    - i.e `4:3 of 256x512 = 512x384` `9:16 of 512x256 = 288x512` `1:1 of 256x300 = 300x300`
-  - You can optionally toggle this to use the "Maximum dimension" slider value
-    - i.e `4:3 of 512 = 512x384` `9:16 of 512 = 288x512` `1:1 of 300 = 300x300`
-- Scale by percentage
-  - Upon clicking, the current dimensions will be multiplied by the given percentage, with aspect ratio maintained
-  - i.e `-25% of 512x256 = 384x192` `+50% of 512x512 = 768x768`
-    - You can also change the display of these if you find it more intuitive
-    - i.e `75% of 512x256 = 384x192` `150% of 512x512 = 768x768`
-    - i.e `x0.75 of 512x256 = 384x192` `x1.5 of 512x512 = 768x768`
-
-![user-interface.png](docs%2Fui.png)
+- **Scale to maximum dimension** — scales width/height to a configured maximum, keeping the aspect ratio.
+- **Scale to aspect ratio** — scales the current dimensions to a given ratio, using the highest width or height (or optionally the "Maximum dimension" slider value).
+  - i.e. `4:3 of 256x512 = 512x384`, `9:16 of 512x256 = 288x512`, `1:1 of 256x300 = 300x300`
+- **Scale by percentage** — multiplies the current dimensions by a percentage, aspect ratio maintained.
+  - i.e. `-25% of 512x256 = 384x192`, `+50% of 512x512 = 768x768`
+  - Display format is configurable: incremental (`-25%`/`+50%`), raw (`75%`/`150%`), or multiplier (`x0.75`/`x1.5`)
 
 ## Settings
 
-- Hide accordion by default (`False`)
+- Hide accordion by default (`True`)
 - Expand accordion by default (`False`)
-  - Determines whether the 'Aspect Ratio Helper' accordion expands by default
-- UI Component order (`MaxDimensionScaler, PredefinedAspectRatioButtons, PredefinedPercentageButtons`)
-  - Determines the order in which the UI components will render
-- Enable JavaScript aspect ratio controls
-- JavaScript aspect ratio buttons `(1:1, 4:3, 16:9, 9:16, 21:9)`
-  - i.e `1:1, 4:3, 16:9, 9:16, 21:9` `2:3, 1:5, 3:5`
-- Show maximum dimension button (`True`)
+- UI Component order (`MaxDimensionScaler, MinDimensionScaler, PredefinedAspectRatioButtons, PredefinedPercentageButtons`)
+  - Determines the order in which the accordion's UI components render
+- Enable JavaScript aspect ratio controls (`True`)
+- JavaScript aspect ratio buttons (`1:1, 3:2, 4:3, 5:4, 16:9, 21:9`)
+  - Only list one orientation per ratio (e.g. `3:2`, not also `2:3`) — the Swap button covers the other orientation
+- Default side length for aspect ratio presets (`1024`)
+  - Pixel budget for the dropdown presets (area ≈ side²); `0` = use the resolution currently set in the UI
+- Align aspect ratio resolutions to a multiple of 64 by default (`True`)
+- Show maximum dimension button (`False`)
 - Maximum dimension default (`1024`)
-- Show pre-defined aspect ratio buttons (`True`)
+- Show minimum dimension button (`False`)
+- Minimum dimension default (`1024`)
+- Show pre-defined aspect ratio buttons (`False`)
 - Use "Maximum dimension" for aspect ratio buttons (`False`)
 - Pre-defined aspect ratio buttons (`1:1, 4:3, 16:9, 9:16, 21:9`)
-  - i.e `1:1, 4:3, 16:9, 9:16, 21:9` `2:3, 1:5, 3:5`
-- Show pre-defined percentage buttons (`True`)
+- Show pre-defined percentage buttons (`False`)
 - Pre-defined percentage buttons (`25, 50, 75, 125, 150, 175, 200`)
-  - i.e `25, 50, 75, 125, 150, 175, 200` `50, 125, 300`
 - Pre-defined percentage display format (`Incremental/decremental percentage (-50%, +50%)`)
   - `Incremental/decremental percentage (-50%, +50%)`
   - `Raw percentage (50%, 150%)`
   - `Multiplication (x0.5, x1.5)`
 
-![settings.png](docs%2Fopts.png)
-
-
-JavaScript & accordion aspect ratios _might_ not play well together - I don't think many users will use both simultaneously, but we'll see.
+JavaScript & accordion aspect ratios _might_ not play well together if both are enabled at once — they operate independently.
 
 ## Contributing
 
@@ -83,9 +70,9 @@ JavaScript & accordion aspect ratios _might_ not play well together - I don't th
 
 ## Dependencies
 
-Developed using existing [AUTOMATIC1111 webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) dependencies.
+Developed using existing [AUTOMATIC1111 webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) / Forge Neo dependencies.
 
-It's recommended to use the python version specified by A1111 webui.
+It's recommended to use the python version specified by the webui you're running.
 
 However - for running unit tests, we use pytest.
 
