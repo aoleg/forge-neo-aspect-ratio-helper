@@ -36,35 +36,42 @@
 }
 
 #txt2img_arh_controls, #img2img_arh_controls {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
     margin-top: 10px;
     margin-bottom: 14px;
-    color: var(--block-title-text-color, var(--block-label-text-color));
-    font-size: var(--block-title-text-size, 13px);
 }
 
-#txt2img_arh_controls input[type=number],
-#img2img_arh_controls input[type=number] {
-    width: 5.5em;
+/* Compact clone of the Width slider block — same row structure, ~1/4 the width */
+.arh-side-block {
+    max-width: 240px !important;
+    min-width: 160px !important;
+    width: auto !important;
+    flex: 0 0 auto !important;
+}
+
+.arh-side-block label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.arh-side-block input[type=number] {
+    width: 4.5em;
     flex: none;
 }
 
-.arh-side-length, .arh-align-64 {
+.arh-side-block input[type=range] {
+    width: 100%;
+}
+
+.arh-align-64 {
     display: flex;
     align-items: center;
     gap: 6px;
     white-space: nowrap;
     cursor: pointer;
     margin: 0;
-}
-
-.arh-side-input-fallback {
-    background: var(--background-fill-primary);
-    border: 1px solid var(--block-border-color);
-    color: var(--block-label-text-color);
-    border-radius: 4px;
-    padding: 0 2px;
+    color: var(--block-title-text-color, var(--block-label-text-color));
+    font-size: var(--block-title-text-size, 13px);
 }

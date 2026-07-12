@@ -246,60 +246,91 @@
       parent.removeChild(nativeSwitchButton);
       wrapper.appendChild(this.switchButton);
 
-      // Compact row with the side-length input and align-64 checkbox,
-      // placed below the native Height slider (not in the accordion).
-      gradioApp().getElementById(`${this.page}_arh_controls`)?.remove();
-      const controlsRow = document.createElement("div");
-      controlsRow.id = `${this.page}_arh_controls`;
-      controlsRow.className = "arh-controls";
+      // "Side" slider: a compact clone of the Width slider's own row
+      // layout (label+value row, then range row), built from freshly
+      // created elements that borrow Width's CSS classes — so it
+      // inherits Forge Neo's exact slider styling without cloning any
+      // Gradio-managed nodes/ids.
+      const { w: widthBlock, h: heightBlock } = findWidthHeightContainers(this.page);
+      const nativeNumber = widthBlock?.querySelector('input[type=number]');
+      const nativeRange = widthBlock?.querySelector('input[type=range]');
+      const nativeLabelRow = nativeNumber?.closest('label') || nativeNumber?.parentElement;
+      const nativeLabelText = nativeLabelRow?.querySelector('span');
 
-      const sideLabel = document.createElement("label");
-      sideLabel.className = "arh-side-length";
-      sideLabel.title =
-        "Pixel budget for the aspect ratio presets (area ≈ side²). " +
-        "0 = scale from the resolution currently set in the UI.";
-      sideLabel.append("Side Length:");
+      const maxDim = controller.maxDimension || _MAXIMUM_DIMENSION;
+      const defaultSide = Number(getSharedOpt('arh_javascript_side_length', 1024)) || 1024;
 
-      const sideInput = document.createElement("input");
-      sideInput.type = "number";
+      const sideBlock = document.createElement('div');
+      sideBlock.id = `${this.page}_arh_side_block`;
+      sideBlock.className = `${widthBlock?.className || ''} arh-side-block`;
+
+      const sideLabelRow = document.createElement('label');
+      sideLabelRow.className = nativeLabelRow?.className || '';
+      sideLabelRow.title =
+        'Pixel budget for the aspect ratio presets (area ≈ side²). ' +
+        '0 = scale from the resolution currently set in the UI.';
+
+      const sideLabelText = document.createElement('span');
+      sideLabelText.className = nativeLabelText?.className || '';
+      sideLabelText.textContent = 'Side';
+
+      const sideInput = document.createElement('input');
+      sideInput.type = 'number';
       sideInput.id = `${this.page}_arh_side_length`;
-      sideInput.min = "0";
-      sideInput.max = String(controller.maxDimension || _MAXIMUM_DIMENSION);
-      sideInput.step = "64";
-      sideInput.value = String(getSharedOpt("arh_javascript_side_length", 1024));
+      sideInput.className = nativeNumber?.className || '';
+      sideInput.min = '0';
+      sideInput.max = String(maxDim);
+      sideInput.step = '64';
+      sideInput.value = String(defaultSide);
 
-      // borrow the native number-box styling so it matches width/height
-      const { h: heightBlock } = findWidthHeightContainers(this.page);
-      const nativeNumberInput = heightBlock?.querySelector("input[type=number]");
-      if (nativeNumberInput) {
-        sideInput.className = nativeNumberInput.className;
-      } else {
-        sideInput.classList.add("arh-side-input-fallback");
-      }
-      sideLabel.appendChild(sideInput);
+      sideLabelRow.append(sideLabelText, sideInput);
 
-      const alignLabel = document.createElement("label");
-      alignLabel.className = "arh-align-64";
+      const sideRange = document.createElement('input');
+      sideRange.type = 'range';
+      sideRange.className = nativeRange?.className || '';
+      sideRange.min = '0';
+      sideRange.max = String(maxDim);
+      sideRange.step = '64';
+      sideRange.value = String(defaultSide);
+
+      sideBlock.append(sideLabelRow, sideRange);
+
+      // keep the number box and range slider mirrored, same as native
+      [sideInput, sideRange].forEach((input) => {
+        input.addEventListener('input', () => {
+          sideInput.value = input.value;
+          sideRange.value = input.value;
+        });
+      });
+
+      const alignLabel = document.createElement('label');
+      alignLabel.className = 'arh-align-64';
       alignLabel.title =
-        "Align to multiple of 64. Some models allow variation within a " +
-        "range (eg 1024 to 2048) but almost always want a multiple of 64";
+        'Some models allow variation within a range (eg 1024 to 2048) ' +
+        'but almost always want a multiple of 64.';
 
-      const alignInput = document.createElement("input");
-      alignInput.type = "checkbox";
+      const alignInput = document.createElement('input');
+      alignInput.type = 'checkbox';
       alignInput.id = `${this.page}_arh_align64`;
-      alignInput.checked = Boolean(getSharedOpt("arh_javascript_align_64", true));
-      alignLabel.appendChild(alignInput);
-      alignLabel.append("×64");
+      alignInput.checked = Boolean(getSharedOpt('arh_javascript_align_64', true));
+      alignLabel.append(alignInput, 'Align to a multiple of 64');
 
-      controlsRow.append(sideLabel, alignLabel);
-      // Insert as a sibling of the *whole* dimensions row (the FormRow
+      gradioApp().getElementById(`${this.page}_arh_controls`)?.remove();
+      const controlsRow = document.createElement('div');
+      controlsRow.id = `${this.page}_arh_controls`;
+      controlsRow.className = 'arh-controls';
+      // set structural layout inline so it can't be lost to a stylesheet
+      // specificity clash with Forge Neo's own rules
+      controlsRow.style.display = 'flex';
+      controlsRow.style.flexDirection = 'column';
+      controlsRow.style.alignItems = 'flex-start';
+      controlsRow.append(sideBlock, alignLabel);
+
+      // Insert as a sibling of the *whole* dimensions row (the row
       // holding the width/height column, the switch-button column, and
       // the batch count/size column) — never as a child of the
-      // width/height column itself. Growing that column's height shifts
-      // whatever centers the switch/dropdown column against it, pushing
-      // the dropdown out of alignment with the sliders. Sitting outside
-      // the row entirely avoids touching that layout altogether while
-      // still rendering directly below it.
+      // width/height column itself, so it can't affect that column's
+      // rendered height.
       const dimensionsRow = heightBlock?.parentNode?.parentNode;
       if (dimensionsRow?.parentNode) {
         dimensionsRow.parentNode.insertBefore(controlsRow, dimensionsRow.nextSibling);
@@ -314,10 +345,46 @@
         const picked = this.getCurrentOption();
         if (picked !== _OFF && picked !== _LOCK) controller.setAspectRatio(picked);
       };
-      sideInput.addEventListener("change", reapply);
-      alignInput.addEventListener("change", reapply);
+      sideInput.addEventListener('change', reapply);
+      sideRange.addEventListener('change', reapply);
+      alignInput.addEventListener('change', reapply);
 
       parent.appendChild(wrapper);
+
+      // The dropdown+swap column visually floats against whatever
+      // vertical alignment Forge Neo's own CSS gives its container
+      // (centered, stretched, etc. — not something we can reliably
+      // predict). Rather than guess the mechanism, measure the actual
+      // rendered position after layout and correct it directly: pin
+      // the dropdown to Width's top and the swap button to Height's
+      // bottom, then null out any residual offset with a transform.
+      const alignToolbox = () => {
+        const { w, h } = findWidthHeightContainers(this.page);
+        if (!w || !h) return;
+        const wRect = w.getBoundingClientRect();
+        const hRect = h.getBoundingClientRect();
+        if (!wRect.height || !hRect.height) return;
+
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.justifyContent = 'space-between';
+        wrapper.style.height = `${hRect.bottom - wRect.top}px`;
+        wrapper.style.transform = '';
+
+        const delta = wRect.top - wrapper.getBoundingClientRect().top;
+        if (Math.abs(delta) > 1) wrapper.style.transform = `translateY(${delta}px)`;
+
+        const sideDelta = wRect.top - sideBlock.getBoundingClientRect().top;
+        sideBlock.style.transform =
+          Math.abs(sideDelta) > 1 ? `translateY(${sideDelta}px)` : '';
+      };
+      // double rAF: give fonts/late layout a second pass before settling
+      requestAnimationFrame(() => requestAnimationFrame(alignToolbox));
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(alignToolbox, 150);
+      });
 
       sel.onchange = () => controller.setAspectRatio(this.getCurrentOption());
       this.switchButton.addEventListener("click", (event) => {
