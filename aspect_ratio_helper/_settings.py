@@ -33,8 +33,11 @@ OPT_KEY_TO_DEFAULT_MAP = {
         DEFAULT_UI_COMPONENT_ORDER_KEY,
     _constants.ARH_UI_JAVASCRIPT_SELECTION_METHOD: 'Aspect Ratios Dropdown',
     _constants.ARH_JAVASCRIPT_ASPECT_RATIO_SHOW_KEY: True,
+    # 2:3, 3:4 etc. are covered by their landscape twins + the swap button
     _constants.ARH_JAVASCRIPT_ASPECT_RATIOS_KEY:
-        '1:1, 3:2, 4:3, 5:4, 16:9',
+        '1:1, 3:2, 4:3, 5:4, 16:9, 21:9',
+    _constants.ARH_JAVASCRIPT_SIDE_LENGTH_KEY: 1024,
+    _constants.ARH_JAVASCRIPT_ALIGN_64_KEY: True,
     _constants.ARH_SHOW_MAX_WIDTH_OR_HEIGHT_KEY: False,
     _constants.ARH_MAX_WIDTH_OR_HEIGHT_KEY:
         _constants.MAX_DIMENSION / 2,
@@ -113,6 +116,34 @@ def on_ui_settings():
             ),
             label='JavaScript aspect ratio buttons'
                   ' (1:1, 4:3, 16:9, 9:16, 21:9)',
+            section=_constants.SECTION,
+        ),
+    )
+    shared.opts.add_option(
+        key=_constants.ARH_JAVASCRIPT_SIDE_LENGTH_KEY,
+        info=shared.OptionInfo(
+            default=OPT_KEY_TO_DEFAULT_MAP.get(
+                _constants.ARH_JAVASCRIPT_SIDE_LENGTH_KEY,
+            ),
+            label='Default side length for aspect ratio presets '
+                  '(pixel budget, area ≈ side²; 0 = use current resolution)',
+            component=gr.Slider,
+            component_args={
+                'minimum': 0,
+                'maximum': _constants.MAX_DIMENSION,
+                'step': 64,
+            },
+            section=_constants.SECTION,
+        ),
+    )
+    shared.opts.add_option(
+        key=_constants.ARH_JAVASCRIPT_ALIGN_64_KEY,
+        info=shared.OptionInfo(
+            default=OPT_KEY_TO_DEFAULT_MAP.get(
+                _constants.ARH_JAVASCRIPT_ALIGN_64_KEY,
+            ),
+            label='Align aspect ratio resolutions to a multiple of 64 '
+                  'by default',
             section=_constants.SECTION,
         ),
     )

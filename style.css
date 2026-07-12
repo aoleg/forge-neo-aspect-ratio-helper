@@ -34,3 +34,37 @@
 .arh-btn-row button {
     min-width: fit-content;
 }
+
+#txt2img_arh_controls, #img2img_arh_controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 14px;
+    color: var(--block-title-text-color, var(--block-label-text-color));
+    font-size: var(--block-title-text-size, 13px);
+}
+
+#txt2img_arh_controls input[type=number],
+#img2img_arh_controls input[type=number] {
+    width: 5.5em;
+    flex: none;
+}
+
+.arh-side-length, .arh-align-64 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+    margin: 0;
+}
+
+.arh-side-input-fallback {
+    background: var(--background-fill-primary);
+    border: 1px solid var(--block-border-color);
+    color: var(--block-label-text-color);
+    border-radius: 4px;
+    padding: 0 2px;
+}
