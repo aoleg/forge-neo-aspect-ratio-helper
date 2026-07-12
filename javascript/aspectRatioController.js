@@ -356,8 +356,9 @@
       // (centered, stretched, etc. — not something we can reliably
       // predict). Rather than guess the mechanism, measure the actual
       // rendered position after layout and correct it directly: pin
-      // the dropdown to Width's top and the swap button to Height's
-      // bottom, then null out any residual offset with a transform.
+      // the dropdown flush to Width's top, then split the remaining
+      // space evenly above/below the swap button instead of letting it
+      // sit flush against the bottom edge.
       const alignToolbox = () => {
         const { w, h } = findWidthHeightContainers(this.page);
         if (!w || !h) return;
@@ -367,9 +368,17 @@
 
         wrapper.style.display = 'flex';
         wrapper.style.flexDirection = 'column';
-        wrapper.style.justifyContent = 'space-between';
+        wrapper.style.justifyContent = 'flex-start';
+        wrapper.style.gap = '0';
         wrapper.style.height = `${hRect.bottom - wRect.top}px`;
         wrapper.style.transform = '';
+        this.switchButton.style.marginTop = '0';
+
+        const selectHeight = selectWrap.getBoundingClientRect().height;
+        const switchHeight = this.switchButton.getBoundingClientRect().height;
+        const wrapperHeight = hRect.bottom - wRect.top;
+        const remaining = wrapperHeight - selectHeight - switchHeight;
+        this.switchButton.style.marginTop = `${Math.max(0, remaining / 2)}px`;
 
         const delta = wRect.top - wrapper.getBoundingClientRect().top;
         if (Math.abs(delta) > 1) wrapper.style.transform = `translateY(${delta}px)`;
